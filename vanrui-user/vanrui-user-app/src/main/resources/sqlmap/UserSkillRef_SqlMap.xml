@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vanrui.app.user.dao.UserSkillRefDao">
+  
+  <resultMap  id="BaseResultMap" type="com.vanrui.app.user.model.UserSkillRefEntity" >
+  		<result column="U_ID" jdbcType="BIGINT" property="uId" />
+	    <result column="SKILL_ID" jdbcType="BIGINT" property="skillId" /> 
+	    <result column="SKILL_NAME" jdbcType="VARCHAR" property="skillName" /> 
+  </resultMap>
+  
+  <resultMap id="userForOrderMap" type="com.vanrui.app.user.model.UserForOrdersDTO">
+		  <result column="u_id" jdbcType="BIGINT" property="uId" />
+		  <result column="username" jdbcType="VARCHAR" property="userName" />
+		  <result column="jgs" jdbcType="BIGINT" property="orgId" />
+		  <result column="skills" jdbcType="VARCHAR" property="skillNames" />
+  </resultMap>
+  
+  <insert id="insert"  parameterType="java.util.List"  >
+	    insert   into  T_REF_USER_SKILL  (SKILL_ID,U_ID)
+	    values
+	    <foreach collection="usRef" item="item" index="index" separator=",">
+	    (
+	        #{item.skillId},
+	        #{item.uId}
+	    ) 
+	    </foreach> 
+  </insert>
+  
+  <delete id="delete"  parameterType="java.lang.Long" >
+  		delete  from  T_REF_USER_SKILL   where  U_ID = #{uId}
+  </delete>
+    
+  <select id="selectSkillsByUId" parameterType="java.lang.Long"  resultMap="BaseResultMap">
+  		SELECT   us.U_ID,us.SKILL_ID,sd.SKILL_NAME   
+  		  FROM   t_ref_user_skill us,t_skill_dictionary sd 
+  		 WHERE   us.SKILL_ID = sd.SKILL_ID AND us.U_ID =#{uId} 
+  </select>
+
+  <select id="isExistParentSonRef" parameterType="java.lang.Long" resultType="java.lang.String" >
+  		SELECT  '1'  FROM  `t_skill_dictionary`  
+		WHERE   P_SKILL_ID  IN (
+			<foreach collection="pSkillIds" item="item" index="index" separator=",">
+		    	 #{item}
+		    </foreach>
+		   )
+		   AND  SKILL_ID  IN  (
+		   <foreach collection="skillIds" item="item" index="index" separator=",">
+	     		#{item}
+	       </foreach>
+		   )
+		   limit  1
+  </select>
+  <select id="selectUserForOrder" resultMap="userForOrderMap">
+  
+        select u.u_id,username, ( select group_concat(kil.skill_name) skill_name 
+                          from t_ref_user_skill kiref, t_skill_dictionary kil 
+                          where kiref.skill_id = kil.skill_id 
+                          and kiref.u_id = u.u_id ) skills, 
+        ( select group_concat( org.or_id ) orname 
+          from t_ref_user_organization org 
+          where org.u_id=u.u_id ) jgs 
+		from t_user u 
+		where 1=1    
+		  AND  u.u_ID in(
+		       <foreach collection="orgUserList" item="orgUser" index="index" separator=",">
+	     			${orgUser}
+	      		   </foreach>
+		  ) 
+		  
+  </select>
+  
+  <select id="selectUserIdsByCondition" resultType="java.lang.Long">
+        SELECT distinct user.U_ID 
+        FROM ( select u_id 
+               from (select distinct(t1.r_id)rid from t_ref_appsource_role as t1, t_app_source as t2 
+                   where t1.s_id = t2.s_id 
+                   and t2.s_status = 1 
+                   and t2.s_id = #{privilege} ) tt1 ,
+                   t_ref_role_user r 
+               where r.r_id = tt1.rid) ruser, 
+               t_ref_user_skill skill, t_user user
+        WHERE  user.U_ID = ruser.u_id
+        and user.STATUS = 1
+        
+        <if test="skillId != null">
+        and user.U_ID = skill.U_ID 
+        and (skill.skill_id = #{skillId} or skill.skill_id 
+            IN (SELECT dictionary.P_SKILL_ID FROM t_skill_dictionary dictionary where dictionary.SKILL_ID = #{skillId} ) )
+        </if>
+        <if test="userName != null">
+        and user.USERNAME LIKE CONCAT('%',#{userName},'%')
+        </if>
+        <!-- 机构类型 -->
+        <if test="projectType == 1">
+	        <if test="combineCode != null">
+	        and user.U_ID in(SELECT DISTINCT ref.U_ID FROM T_REF_USER_ORGANIZATION ref WHERE ref.COMBINATION_CODE like concat(#{combineCode},'%'))
+	        </if>
+        </if>
+        <if test="projectType == 2">
+            <if test="combineCode != null">
+            and user.U_ID in(SELECT DISTINCT ref.U_ID FROM T_REF_USER_ORGANIZATION ref WHERE ref.COMBINATION_CODE = #{combineCode})
+            </if>
+        </if>
+        <if test="projectType == 3">
+            <if test="combineCode != null">
+            and user.U_ID in(SELECT DISTINCT ref.U_ID FROM T_REF_USER_ORGANIZATION ref WHERE ref.COMBINATION_CODE in (#{combineCode}, left(#{combineCode},LENGTH(#{combineCode})-7)))
+            </if>
+        </if>
+  </select>
+  
+  <select id="selectSubSkillListByUserId" resultType="java.lang.Long" parameterType="java.lang.Long">
+   		SELECT sk.SKILL_ID FROM t_skill_dictionary sk, t_ref_user_skill ref 
+		WHERE ref.U_ID=#{userId}
+		  AND sk.P_SKILL_ID > 0 
+		  AND (ref.`SKILL_ID`=sk.`SKILL_ID` OR sk.`P_SKILL_ID`=ref.`SKILL_ID`) 
+   </select>
+   
+   <select id="validateSkillUsedById" resultType="java.lang.Integer" parameterType="java.lang.Long" >
+   		SELECT 1 FROM `t_ref_user_skill` WHERE SKILL_ID=#{id} LIMIT 1
+   </select>
+</mapper>
+
+
+
+

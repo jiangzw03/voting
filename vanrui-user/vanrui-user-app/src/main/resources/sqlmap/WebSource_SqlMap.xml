@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vanrui.app.user.dao.WebSourceDao">
+  <resultMap id="BaseResultMap" type="com.vanrui.app.user.model.SourceEntity">
+	    <id column="S_ID" jdbcType="INTEGER" property="sId" />
+	    <result column="P_S_ID" jdbcType="BIGINT" property="psId" /> 
+	    <result column="S_NAME" jdbcType="VARCHAR" property="sName" /> 
+	    <result column="S_TYPE" jdbcType="INTEGER" property="sType" /> 
+	    <result column="haveAuth" jdbcType="INTEGER" property="status" /> 
+  </resultMap>
+  
+  <resultMap id="BaseResultMap01" type="com.vanrui.app.user.model.SourceEntity">
+	    <id column="S_ID" jdbcType="INTEGER" property="sId" />
+	    <result column="P_S_ID" jdbcType="BIGINT" property="psId" /> 
+	    <result column="S_NAME" jdbcType="VARCHAR" property="sName" /> 
+	    <result column="S_TYPE" jdbcType="INTEGER" property="sType" /> 
+	    <result column="S_CODE" jdbcType="VARCHAR" property="sCode" /> 
+	    <result column="S_ORDER" jdbcType="INTEGER" property="sOrder" /> 
+	    <result column="S_URL" jdbcType="VARCHAR" property="sUrl" />  
+	    <result column="STATUS" jdbcType="VARCHAR" property="status" /> 
+	    <result column="S_TRACE" jdbcType="VARCHAR" property="sTrace" /> 
+  </resultMap>
+   
+   <resultMap id="BaseResultMap02" type="com.vanrui.app.user.dto.RoleSourceUrlDto">
+	    <result column="S_ID" jdbcType="BIGINT" property="rId" /> 
+	    <result column="R_ID" jdbcType="BIGINT" property="rId" /> 
+	    <result column="S_URL" jdbcType="VARCHAR" property="url" />  
+  </resultMap> 
+  
+   <resultMap id="BaseResultMap03" type="com.vanrui.app.user.model.SourceAuthEntity">
+	    <result column="S_ID" jdbcType="BIGINT" property="sId" /> 
+	    <result column="rIds" jdbcType="VARCHAR" property="rIds" /> 
+	    <result column="S_URL" jdbcType="VARCHAR" property="sUrl" />  
+  </resultMap> 
+   
+  <sql id="Base_Column_List">
+    S_ID,P_S_ID,S_NAME,S_TYPE
+  </sql>
+  
+  <sql id="Base_Column_List01">
+    S_ID,P_S_ID,S_NAME,S_TYPE,S_CODE,S_ORDER,S_URL,S_TRACE
+  </sql>
+  
+  <select id="selectDetailListByrId"  parameterType="java.lang.Long" resultMap="BaseResultMap01">
+  	  SELECT  
+		      S_ID,P_S_ID,S_NAME,S_TYPE,S_CODE,S_ORDER,S_TRACE,S_URL   
+	   FROM   T_WEB_SOURCE  m  
+	   WHERE   S_STATUS = 1  
+	     AND   m.S_TYPE <![CDATA[ < ]]> 3
+	     AND   EXISTS (
+  		  	select  1  from  T_REF_WEBSOURCE_ROLE ref  where  ref.R_ID = #{rId} and  ref.S_ID = m.S_ID
+  		  	) 
+	   ORDER BY  P_S_ID ASC , S_ORDER  ASC 
+  </select> 
+  
+  <select id="selectBaseListByrId"   parameterType="java.lang.Long" resultMap="BaseResultMap01" >
+  		 SELECT  
+		      S_ID,P_S_ID,S_NAME,S_TYPE,S_CODE,S_ORDER,S_TRACE,S_URL,
+		      (CASE WHEN EXISTS (
+  		  	SELECT  1  FROM  T_REF_WEBSOURCE_ROLE ref  WHERE  ref.R_ID = #{rId}  AND  ref.S_ID = m.S_ID
+  		  	)  THEN 1 ELSE 0 END ) STATUS  
+	   FROM   T_WEB_SOURCE  m  
+	   WHERE   S_STATUS = 1  AND  S_TYPE <![CDATA[ < ]]> 3 
+	   ORDER BY  P_S_ID ASC , S_ORDER  ASC
+  
+  </select>
+  
+  <select id="selectAll"   resultMap="BaseResultMap">
+  		select  
+  			<include refid="Base_Column_List"></include>
+  		from  T_WEB_SOURCE
+  		where  S_STATUS = 1   
+		ORDER BY  p_s_id ASC  ,s_order ASC
+  </select>
+   
+	<select id="selectAllByRoleId"  parameterType="java.lang.Long" resultMap="BaseResultMap">
+		SELECT m.S_ID,m.P_S_ID,m.S_NAME,m.S_TYPE,
+			( CASE WHEN ar.S_ID IS NULL THEN 0 ELSE 1 END ) haveAuth
+		FROM T_WEB_SOURCE m 
+		LEFT JOIN t_ref_websource_role ar ON ar.S_ID = m.S_ID AND ar.R_ID=#{roleId}
+		WHERE m.S_STATUS = 1 and m.S_TYPE <![CDATA[ < ]]> 3
+		ORDER BY P_S_ID ASC,S_ORDER ASC
+	</select>  
+  
+  <select id="selectAllrIdAndUrl"   resultMap="BaseResultMap02">
+   	    SELECT  ar.R_ID,ar.S_ID,web.S_URL 
+		  FROM  T_WEB_SOURCE web,t_ref_websource_role ar 
+		 WHERE  web.S_STATUS = 1 
+		   AND  web.S_URL IS NOT NULL 
+		   AND  ar.S_ID = web.S_ID
+  </select>
+  
+  <select id="selectAllWebUrlAndAuths"  resultMap="BaseResultMap03" >
+  		SELECT  web.S_ID,web.S_URL,
+  				(SELECT  GROUP_CONCAT(refwr.R_ID) FROM `t_ref_websource_role` refwr WHERE  refwr.S_ID = web.S_ID) rIds
+ 		  FROM  t_web_source  web 
+ 		 WHERE  web.S_URL IS NOT NULL
+  </select>
+</mapper>

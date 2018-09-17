@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vanrui.app.user.dao.UserRoleDao">
+   
+   <resultMap id="BaseResultMap" type="com.vanrui.app.user.model.RoleEntity">
+	    <id column="R_ID" jdbcType="BIGINT" property="rId" />
+	    <result column="R_NAME" jdbcType="VARCHAR" property="rName" /> 
+  </resultMap>
+  
+  <insert id="insertAuth"  parameterType="java.util.List"  >
+	    insert   into  T_ref_role_user (R_ID,U_ID)
+	    values
+	    <foreach collection="authList" item="item" index="index" separator=",">
+	    (
+	        #{item.rId},
+	        #{item.uId}
+	    ) 
+	    </foreach>
+	    
+  </insert>
+  
+  <delete id="deleteAuth"  parameterType="java.lang.Long" >
+  		delete  from  T_ref_role_user  where  U_ID = #{uId}
+  </delete>
+  
+  <select id="isExistBindUsersByRoleId"  parameterType="java.lang.Long" resultType="java.lang.Integer">
+  		SELECT  EXISTS (SELECT U_ID  FROM  T_ref_role_user  WHERE  R_ID = #{rId})  
+  </select>
+   
+   <select id="selectRolesByUId"  parameterType="java.lang.Long" resultMap="BaseResultMap">
+  		SELECT  ref.R_ID,role.R_NAME  
+  		  from  T_ref_role_user ref,T_ROLE role
+  		 where  ref.R_ID = role.R_ID and ref.U_ID = #{uId} 
+  </select> 
+   
+  <select id="selectUserIdsByRoleId" resultType="java.lang.Long">
+  		SELECT U_ID  FROM  T_ref_role_user  WHERE  R_ID = #{roleId}
+  </select>
+  
+</mapper>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vanrui.app.user.dao.EbaFmRefDAO">
+  <resultMap id="BaseResultMap" type="com.vanrui.app.user.model.EbaFmRefEntity">
+	    <id column="U_ID" jdbcType="BIGINT" property="userId" />
+	    <result column="FM_U_ID" jdbcType="VARCHAR" property="fmUserId" /> 
+	    <result column="FM_U_NAME" jdbcType="VARCHAR" property="fmUserName" /> 
+	    <result column="FM_U_PHONE" jdbcType="VARCHAR" property="fmUserPhone" /> 
+  </resultMap>
+     
+  <insert id="insert" parameterType="com.vanrui.app.user.model.EbaFmRefEntity" >
+  	insert into T_REF_EBA_FM(U_ID,FM_U_ID,FM_U_NAME,FM_U_PHONE)
+  	values(
+	  	#{userId},
+	  	#{fmUserId},
+	  	#{fmUserName},
+	  	#{fmUserPhone}
+  	)
+  </insert>
+  
+  <update id="update" parameterType="com.vanrui.app.user.model.EbaFmRefEntity" >
+  	update  T_REF_EBA_FM 
+  	<set>
+  		<if test="fmUserId!=null">
+  			FM_U_ID=#{fmUserId},
+  		</if>
+  		<if test="fmUserName!=null">
+  			FM_U_NAME=#{fmUserName},
+  		</if>
+  		<if test="fmUserPhone!=null">
+  			FM_U_PHONE=#{fmUserPhone},
+  		</if>
+  	</set>
+  	where U_ID=#{userId}
+  </update>   
+   
+  <select id="selecOneByFMUId"  parameterType="java.lang.Long" resultType="java.lang.Long">
+  		SELECT m.U_ID
+		FROM T_REF_EBA_FM m, T_USER u
+		WHERE m.`U_ID` = u.`U_ID` AND u.`STATUS` = 1
+		AND FM_U_ID = #{fmUId} 
+  </select> 
+     
+  <select id="selecOneByUIds"  parameterType="java.lang.Long" resultMap="BaseResultMap">
+  		select  
+  			U_ID,FM_U_ID,FM_U_NAME,FM_U_PHONE
+  		from  T_REF_EBA_FM  m
+  		where  U_ID  IN (
+  		<foreach collection="userIdSet" index="index" item="item" separator="," >
+          	#{item}
+        </foreach>
+  		)
+  		limit  1
+  </select>
+  
+
+  <select id="selecOneByAreaId"  parameterType="java.lang.Long" resultMap="BaseResultMap">
+  		select  
+  			U_ID,FM_U_ID,FM_U_NAME,FM_U_PHONE
+  		from  T_REF_EBA_FM  m
+  		WHERE U_ID IN (
+			SELECT t.U_ID FROM `t_ref_user_organization` org,`t_user` t,`t_ref_role_user` ref
+			WHERE org.OR_ID = #{areaId}
+			 AND  org.U_ID=t.u_id
+			 AND  t.U_ID=ref.u_id 
+			 AND  R_ID IN(
+				SELECT R_ID FROM `t_ref_appsource_role`WHERE  S_ID IN (4,5) 
+				UNION 
+				SELECT R_ID FROM `t_ref_websource_role`  WHERE  S_ID IN (210,220)    
+			 )
+		)
+  		limit  1
+  </select>
+  
+  <select id="checkExistByPhoneNum"   resultType="java.lang.Integer" >
+  		select  
+  			COUNT(*)
+  		from  T_REF_EBA_FM 
+  		where  FM_U_PHONE  = #{phoneNum}
+  		and  U_ID !=#{userId}
+  		limit 1
+  </select>
+  
+   <delete id="deleteByUId" parameterType="java.lang.Long">
+   		DELETE  FROM   T_REF_EBA_FM  WHERE  U_ID  = #{userId}
+   </delete>
+   
+   <select id="selectFMAccountByCity"  parameterType="java.lang.String" resultMap="BaseResultMap">
+   		SELECT fm.u_id,fm.fm_u_id,fm.fm_u_name,fm.fm_u_phone 
+   		FROM  t_ref_eba_fm fm 
+		LEFT JOIN t_user eba  ON   eba.U_ID = fm.U_ID AND STATUS = 1
+		LEFT JOIN T_REF_USER_ORGANIZATION UO ON UO.U_ID = fm.U_ID AND COMBINATION_CODE LIKE  CONCAT(#{phoneNum},'%')
+		limit 1
+   </select>
+  
+</mapper>

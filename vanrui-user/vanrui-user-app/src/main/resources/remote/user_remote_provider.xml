@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+            http://www.springframework.org/schema/context
+            http://www.springframework.org/schema/context/spring-context-4.0.xsd
+			http://code.alibabatech.com/schema/dubbo
+        	http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+ 
+	<dubbo:provider version="${dubbo.transport.version}" loadbalance="leastactive" delay="-1" timeout="10000" cluster="failfast" />
+	 
+	    
+    <dubbo:service ref="authManaFacade" interface="com.vanrui.app.user.facade.AuthManaFacade" />
+    <dubbo:service ref="roleSourceFacade" interface="com.vanrui.app.user.facade.RoleSourceFacade" />
+    <dubbo:service ref="userCenterFacade" interface="com.vanrui.app.user.facade.UserCenterFacade" />
+    <dubbo:service ref="userOrgRefFacade" interface="com.vanrui.app.user.facade.UserOrgRefFacade" />
+    <dubbo:service ref="userRelationFacade" interface="com.vanrui.app.user.facade.UserRelationFacade" />
+    
+    <dubbo:service ref="loginFacade" interface="com.vanrui.app.user.facade.LoginFacade" />
+    <dubbo:service ref="securityService" interface="ooh.bravo.security.web.SecurityService" /> 
+    
+    <dubbo:service ref="skillFacade" interface="com.vanrui.app.user.facade.SkillFacade" />  
+    
+    
+    
+    <dubbo:service ref="userForOrderFacade" interface="com.vanrui.app.user.facade.UserForOrderFacade" />  
+    
+    <dubbo:service ref="suggestFacade" interface="com.vanrui.app.user.facade.SuggestFacade" />  
+      
+</beans>
